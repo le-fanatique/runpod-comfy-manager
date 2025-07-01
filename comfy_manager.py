@@ -37,12 +37,12 @@ def logs():
 
 @app.route("/start", methods=["POST"])
 def start():
-    subprocess.Popen(["/bin/bash", "/workspace/3dWar_launch/start_comfy.sh"])
+    subprocess.Popen(["/bin/bash", "/workspace/runpod-comfy-manager/start_comfy.sh"])
     return '', 204
 
 @app.route("/stop", methods=["POST"])
 def stop():
-    subprocess.call(["/bin/bash", "/workspace/3dWar_launch/stop_comfy.sh"])
+    subprocess.call(["/bin/bash", "/workspace/runpod-comfy-manager/stop_comfy.sh"])
     return '', 204
 
 
@@ -53,7 +53,7 @@ def download_hf():
     model_type = data.get("model_type", "Model")
     hf_token = os.environ.get("HF_TOKEN")
 
-    progress_file = "/workspace/3dWar_launch/hf_download_status.txt"
+    progress_file = "/workspace/runpod-comfy-manager/hf_download_status.txt"
     with open(progress_file, "w") as f:
         f.write("Téléchargement en cours...\n")
 
@@ -92,7 +92,7 @@ def download_hf():
 @app.route("/download/progress")
 def download_progress():
     try:
-        with open("/workspace/3dWar_launch/hf_download_status.txt", "r") as f:
+        with open("/workspace/runpod-comfy-manager/hf_download_status.txt", "r") as f:
             return jsonify({"progress": f.read()})
     except:
         return jsonify({"progress": "Aucune activité de téléchargement."})
@@ -123,8 +123,8 @@ if __name__ == "__main__":
 
 @app.route("/restart", methods=["POST"])
 def restart():
-    subprocess.call(["/bin/bash", "/workspace/3dWar_launch/stop_comfy.sh"])
-    subprocess.Popen(["/bin/bash", "/workspace/3dWar_launch/start_comfy.sh"])
+    subprocess.call(["/bin/bash", "/workspace/runpod-comfy-manager/stop_comfy.sh"])
+    subprocess.Popen(["/bin/bash", "/workspace/runpod-comfy-manager/start_comfy.sh"])
     return '', 204
 
 @app.route("/models")
