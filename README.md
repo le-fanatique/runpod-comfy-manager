@@ -12,7 +12,7 @@ Ce dossier contient une interface web simple pour contrôler ComfyUI depuis RunP
 ## 🚀 Installation
 
 ```bash
-git clone https://github.com/<TON-USER>/runpod-comfy-manager.git
+git clone https://github.com/le-fanatique/runpod-comfy-manager.git
 cd runpod-comfy-manager
 bash setup.sh
 ```
