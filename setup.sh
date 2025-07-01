@@ -1,5 +1,5 @@
 #!/bin/bash
-cd /workspace/3dWar_launch
+cd /workspace/runpod-comfy-manager
 python3 -m venv venv
 source venv/bin/activate
 pip install flask
