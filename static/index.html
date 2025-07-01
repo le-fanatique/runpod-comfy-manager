@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>ComfyUI Manager</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background-color: #111;
+      color: #eee;
+      padding: 2rem;
+    }
+    h1 { color: #00e676; }
+    button {
+      background-color: #333;
+      color: #eee;
+      border: none;
+      padding: 10px 20px;
+      margin: 5px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #444;
+    }
+    .log-box {
+      background: #000;
+      color: #0f0;
+      padding: 10px;
+      margin-top: 20px;
+      border: 1px solid #444;
+      max-height: 300px;
+      overflow-y: scroll;
+      white-space: pre-wrap;
+      font-family: monospace;
+    }
+    select, input[type="text"] {
+      background: #222;
+      color: #eee;
+      border: 1px solid #555;
+      padding: 5px;
+      margin-right: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>ComfyUI Manager (RunPod)</h1>
+  <p>Status : <span id="status">...</span></p>
+
+  <button onclick="callAPI('/start')">Démarrer ComfyUI</button>
+  <button onclick="stopComfy()">Éteindre ComfyUI</button>
+  <button onclick="callAPI('/restart')">Redémarrer ComfyUI</button>
+  <button onclick="openComfy()">Ouvrir ComfyUI</button>
+
+  <h2>Télécharger depuis HuggingFace</h2>
+  <input type="text" id="hfUrl" placeholder="URL HuggingFace" size="50">
+  <select id="hfModelType">
+    <option value="Model">Model</option>
+    <option value="checkpoints">checkpoints</option>
+    <option value="clip">clip</option>
+    <option value="clip_vision">clip_vision</option>
+    <option value="controlnet">controlnet</option>
+    <option value="diffusion_models">diffusion_models</option>
+    <option value="diffusers">diffusers</option>
+    <option value="loras">loras</option>
+    <option value="style_models">style_models</option>
+    <option value="text_encoders">text_encoders</option>
+    <option value="unet">unet</option>
+    <option value="upscale_models">upscale_models</option>
+    <option value="vae">vae</option>
+  </select>
+  <button onclick="downloadHF()">Télécharger</button>
+  
+
+  <h2>Modèles installés</h2>
+<ul id="modelList"></ul>
+
+<h2>Logs</h2>
+  <div class="log-box" id="logs">Chargement...</div>
+
+
+</body>
+</html>
+
+
+
+
+
+<script>
+function updateStatus() {
+  fetch("/status")
+    .then(res => res.json())
+    .then(data => {
+      document.getElementById("status").textContent = data.running ? "EN COURS" : "ARRÊTÉ";
+    });
+}
+
+function fetchCombinedLogs() {
+  Promise.all([
+    fetch("/logs").then(res => res.json()),
+    fetch("/download/progress").then(res => res.json())
+  ]).then(([logData, downloadData]) => {
+    let output = "";
+    if (downloadData.progress && downloadData.progress.trim()) {
+      output += "[Téléchargement HuggingFace]\n" + downloadData.progress + "\n";
+    }
+    if (logData.logs && logData.logs.trim()) {
+      output += "[Logs ComfyUI]\n" + logData.logs;
+    }
+    document.getElementById("logs").textContent = output || "Aucun log disponible.";
+  });
+}
+
+function callAPI(endpoint) {
+  fetch(endpoint, { method: 'POST' }).then(() => updateStatus());
+}
+
+function stopComfy() {
+  fetch("/stop", { method: "POST" })
+    .then(() => {
+      updateStatus();
+      document.getElementById("logs").textContent = "ComfyUI arrêté.";
+    });
+}
+
+function downloadHF() {
+  const url = document.getElementById("hfUrl").value;
+  const modelType = document.getElementById("hfModelType").value;
+
+  document.getElementById("logs").textContent = "Téléchargement lancé...";
+
+  fetch("/download/huggingface", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ url, model_type: modelType })
+  }).then(res => {
+    if (!res.ok) {
+      res.json().then(data => {
+        document.getElementById("logs").textContent = "Erreur : " + (data.detail || "inconnue");
+      });
+    }
+  });
+}
+
+function openComfy() {
+  const host = window.location.hostname;
+  let comfyURL = "";
+
+  if (host.includes(".proxy.runpod.net")) {
+    comfyURL = window.location.protocol + "//" + host.replace(/-[0-9]+\./, "-3001.");
+  } else {
+    comfyURL = "http://localhost:3001";
+  }
+
+  window.open(comfyURL, "_blank");
+}
+
+function fetchModels() {
+  fetch("/models")
+    .then(res => res.json())
+    .then(data => {
+      const container = document.getElementById("modelList");
+      container.innerHTML = "";
+      for (const [cat, models] of Object.entries(data)) {
+        const li = document.createElement("li");
+        li.textContent = cat + ": " + (models.length ? models.join(", ") : "aucun");
+        container.appendChild(li);
+      }
+    });
+}
+
+setInterval(fetchCombinedLogs, 2000);
+setInterval(updateStatus, 5000);
+setInterval(fetchModels, 10000);
+
+fetchCombinedLogs();
+updateStatus();
+fetchModels();
+</script>
