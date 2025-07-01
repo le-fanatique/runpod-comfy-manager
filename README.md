@@ -12,7 +12,8 @@ Ce dossier contient une interface web simple pour contrôler ComfyUI depuis RunP
 ## 🚀 Installation
 
 ```bash
-cd /workspace/3dWar_launch
+git clone https://github.com/<TON-USER>/runpod-comfy-manager.git
+cd runpod-comfy-manager
 bash setup.sh
 ```
 
